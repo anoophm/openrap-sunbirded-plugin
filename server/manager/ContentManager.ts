@@ -41,7 +41,7 @@ export default class ContentManager {
             const forked = fork(path.join(__dirname, './../childProcess', 'contentImport.js'));
             forked.send({ headers: req.headers, fileName: req.fileName, pluginId: this.pluginId, 
                 contentFilesPath: this.contentFilesPath, downloadsFolderPath: this.downloadsFolderPath});
-            forked.on('message', (error, data) => {
+            forked.on('message', ({error, data}) => {
                 if (error) {
                     logger.debug(`ReqId = "${req.headers['X-msgid']}": child process returned error`, error)
                     reject(error);
