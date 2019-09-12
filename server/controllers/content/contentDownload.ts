@@ -97,7 +97,8 @@ export default class ContentDownload {
                                         "filters": {
                                             "identifier": childNodes,
                                             "mimeType": { "!=": "application/vnd.ekstep.content-collection" }
-                                        }
+                                        },
+                                        "limit": childNodes.length
                                     }
                                 }, {
                                     headers: {

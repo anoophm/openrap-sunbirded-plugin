@@ -195,8 +195,8 @@ export default class ContentManager {
                 })
                 if (contentData !== undefined && _.get(contentData, 'desktopAppMetadata.ecarFile') && _.get(dbData, 'id')) {
                     const fileName = path.basename(contentData.desktopAppMetadata.ecarFile, '.ecar');
-                    this.deleteContentFolder(path.join('ecars', contentData.desktopAppMetadata.ecarFile));
-                    this.deleteContentFolder(path.join('content', fileName));
+                    await this.deleteContentFolder(path.join('ecars', contentData.desktopAppMetadata.ecarFile));
+                    await this.deleteContentFolder(path.join('content', fileName));
                 }
                 return parent;
             } else {
@@ -243,8 +243,8 @@ export default class ContentManager {
                 const dbData = await this.dbSDK.upsert('content', metaData.identifier, metaData);
                 if (contentData !== undefined && _.get(contentData, 'desktopAppMetadata.ecarFile') && _.get(dbData, 'id')) {
                     const fileName = path.basename(contentData.desktopAppMetadata.ecarFile, '.ecar');
-                    this.deleteContentFolder(path.join('ecars', contentData.desktopAppMetadata.ecarFile));
-                    this.deleteContentFolder(path.join('content', fileName));
+                    await this.deleteContentFolder(path.join('ecars', contentData.desktopAppMetadata.ecarFile));
+                    await this.deleteContentFolder(path.join('content', fileName));
                 }
                 return metaData;
             }

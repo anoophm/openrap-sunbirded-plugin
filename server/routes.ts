@@ -35,7 +35,7 @@ export class Router {
     };
 
     const updateRequestBody = req => {
-      logger.debug(`ReqId = "${req.headers['X-msgid']}": Updating requestbody filters`);
+      logger.debug(`ReqId = "${req.headers['X-msgid']}": Updating request body filters`);
       if (_.get(req, 'body.request.filters')) {
         req.body.request.filters.compatibilityLevel = {
           "<=": config.get("CONTENT_COMPATIBILITY_LEVEL")
@@ -44,6 +44,19 @@ export class Router {
       return req;
     };
 
+    const logResponseTime = (req, res, next) => {
+      const startHrTime = process.hrtime();
+    
+      res.on("finish", () => {
+        const elapsedHrTime = process.hrtime(startHrTime);
+        const elapsedTimeInMs = elapsedHrTime[0] * 1000 + elapsedHrTime[1] / 1e6;
+        logger.info(`${req.headers['X-msgid'] || ''} path: ${req.path} took ${elapsedTimeInMs/1000}s`);
+      });
+    
+      next();
+    }
+
+    app.use(logResponseTime);
     //portal static routes
     app.all(
       [
