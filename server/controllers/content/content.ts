@@ -172,12 +172,15 @@ export default class Content {
             req.fileName = uniqFileName;
             req.filePath = filePath;
             logger.info(`ReqId = "${req.headers['X-msgid']}": Uploading of file  ${filePath} started`);
-            // file.pipe(fs.createWriteStream(filePath));
             this.contentManager.unZipContent(req, res, file);
         });
         busboy.on('finish', () => {
             logger.info(`ReqId = "${req.headers['X-msgid']}": Upload complete of the file ${req.filePath}`);
             logger.debug(`ReqId = "${req.headers['X-msgid']}": File extraction is starting for the file ${req.fileName}`);
+            if(req.contentImported){
+                logger.info(`ReqId = "${req.headers['X-msgid']}": import skipped as content already imported`);
+                return res.send({ success: true });
+            }
             this.contentManager
                 .startImport(req)
                 .then(data => {

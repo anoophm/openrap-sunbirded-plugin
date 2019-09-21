@@ -63,28 +63,60 @@ export default class ContentManager {
             fs.mkdirSync(path);
         }
     }
-    async saveFile (res, zipStream, fileName, cb) {
-        console.log('got ', zipStream.type, zipStream.path)
-        if (zipStream.type === 'Directory') {
-            await this.createDirectory(fileName + '/'+ zipStream.path)
-            cb();
-        } else {
-            zipStream.pipe(fs.createWriteStream(fileName + '/'+ zipStream.path)).on('finish',cb);
-        }
+    async writeStream(zipStream, fileName){
+        return new Promise( async (resolve, reject) => {
+            logger.info(`unzipped content with file type = ${zipStream.type}`);
+            logger.info(`and file path = ${zipStream.path}`);
+            if (zipStream.type === 'Directory') {
+                await this.createDirectory(fileName + '/'+ zipStream.path)
+                resolve();
+            } else {
+                zipStream.pipe(fs.createWriteStream(fileName + '/'+ zipStream.path)).on('finish',resolve);
+            }
+        })
     }
     async unZipContent(req, res, streamHandler){
+        let contentImported: any = false;
         await this.createDirectory(req.filePath)
         streamHandler.pipe(unZipper.Parse())
         .pipe(stream.Transform({
             objectMode: true,
-            transform: async (entry, e, cb) => {
-            // if (entry.path === "manifest.json") {
-            //   checkContentState(res, entry, fileName, cb)
-            // } else {
-                this.saveFile(res, entry, req.filePath, cb);
-            // }
+            transform: async (zipStream, e, cb) => {
+                if(contentImported){
+                    // logger.info(`ReqId = "${req.headers['X-msgid']}": import skipped as content already imported`);
+                    req.contentImported = contentImported;
+                    zipStream.autodrain();
+                    return cb();
+                    // return res.send({ success: true });
+                }
+                await this.writeStream(zipStream, req.filePath);
+                if (zipStream.path === "manifest.json") {
+                    contentImported = await this.checkContentState(req, res)
+                }
+                cb()
             }
         }))
+    }
+    async checkContentState(req, res): Promise<any> {
+        return new Promise(async (resolve, reject) => {
+            let manifest = await this.fileSDK.readJSON(path.join(this.contentFilesPath, path.basename(req.fileName, path.extname(req.fileName)), 'manifest.json'));
+            // console.log(JSON.stringify(manifest, null, 2));
+            // logger.info(`manifest details obtained while unzipping = ${manifest}`);
+            let items = _.get(manifest, 'archive.items');
+            let parent: any | undefined = _.find(items, (i) => {
+                return (i.mimeType === 'application/vnd.ekstep.content-collection' && i.visibility === 'Default')
+            });
+            logger.info(`parent id obtained while unzipping = ${parent.identifier}`);
+            const contentData = await this.dbSDK.get('content', parent.identifier).catch(error => {
+                logger.error(`checking content in db while streaming failed  = ${error}`);
+            });
+            logger.info(`content data in db while unzipping = ${contentData}`);
+            if(contentData){
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        })
     }
     // unzip ecar 
     // read manifest
@@ -98,11 +130,6 @@ export default class ContentManager {
     // prepare hierarchy and insert   
     async startImport(req) {
         logger.debug(`ReqId = "${req.headers['X-msgid']}": File extraction is started for the file: ${req.fileName}`)
-        // unzip to content_files folder
-        logger.info(` ReqId = "${req.headers['X-msgid']}": File has to be unzipped`);
-        // await this.fileSDK.unzip(path.join('ecars', req.fileName), 'content', true)
-        // await this.unzip(req, path.join('ecars', req.fileName), 'content', true);
-        logger.info(` ReqId = "${req.headers['X-msgid']}": File is unzipped, reading manifest file and adding baseDir to manifest`);
         // read manifest file and add baseDir to manifest as content and folder name relative path
         let manifest = await this.fileSDK.readJSON(path.join(this.contentFilesPath, path.basename(req.fileName, path.extname(req.fileName)), 'manifest.json'));
         let items = _.get(manifest, 'archive.items');
