@@ -13,6 +13,9 @@ import { isRegExp } from 'util';
 import config from '../config';
 import { IDesktopAppMetadata, IAddedUsingType } from '../controllers/content/IContent';
 import { fork } from 'child_process';
+const unZipper = require('unzip-stream');
+const stream = require('stream');
+
 let unzipChildProcess;
 
 
@@ -49,11 +52,39 @@ export default class ContentManager {
                     logger.error(`ReqId = "${req.headers['X-msgid']}": File extraction failed for file: ${filePath}`)
                     return reject(error);
                 } else if(filePath === data.filePath){
-                    logger.error(`ReqId = "${req.headers['X-msgid']}": File extraction successful for file: ${filePath}`)
+                    logger.info(`ReqId = "${req.headers['X-msgid']}": File extraction successful for file: ${filePath}`)
                     return resolve();
                 }
             });
         })
+    }
+    async createDirectory(path) {
+        if (!fs.existsSync(path)){
+            fs.mkdirSync(path);
+        }
+    }
+    async saveFile (res, zipStream, fileName, cb) {
+        console.log('got ', zipStream.type, zipStream.path)
+        if (zipStream.type === 'Directory') {
+            await this.createDirectory(fileName + '/'+ zipStream.path)
+            cb();
+        } else {
+            zipStream.pipe(fs.createWriteStream(fileName + '/'+ zipStream.path)).on('finish',cb);
+        }
+    }
+    async unZipContent(req, res, streamHandler){
+        await this.createDirectory(req.filePath)
+        streamHandler.pipe(unZipper.Parse())
+        .pipe(stream.Transform({
+            objectMode: true,
+            transform: async (entry, e, cb) => {
+            // if (entry.path === "manifest.json") {
+            //   checkContentState(res, entry, fileName, cb)
+            // } else {
+                this.saveFile(res, entry, req.filePath, cb);
+            // }
+            }
+        }))
     }
     // unzip ecar 
     // read manifest
@@ -70,7 +101,7 @@ export default class ContentManager {
         // unzip to content_files folder
         logger.info(` ReqId = "${req.headers['X-msgid']}": File has to be unzipped`);
         // await this.fileSDK.unzip(path.join('ecars', req.fileName), 'content', true)
-        await this.unzip(req, path.join('ecars', req.fileName), 'content', true);
+        // await this.unzip(req, path.join('ecars', req.fileName), 'content', true);
         logger.info(` ReqId = "${req.headers['X-msgid']}": File is unzipped, reading manifest file and adding baseDir to manifest`);
         // read manifest file and add baseDir to manifest as content and folder name relative path
         let manifest = await this.fileSDK.readJSON(path.join(this.contentFilesPath, path.basename(req.fileName, path.extname(req.fileName)), 'manifest.json'));

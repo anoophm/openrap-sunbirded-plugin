@@ -10,7 +10,8 @@
     "test": "npm run pre-test &&  nyc --reporter=html --reporter=text mocha --timeout 10000 --exit -r ts-node/register **/**/*.spec.ts **/*.spec.ts *.spec.ts --exclude **/node_modules/** && npm run post-test",
     "post-test": "rimraf test test_data/openrap-sunbirded-plugin/content test_data/openrap-sunbirded-plugin/ecars test_data/openrap-sunbirded-plugin/telemetry_archived test_data/database/* test_data/log",
     "prepare-data": "node_modules/.bin/rimraf ./dist && tsc --noImplicitUseStrict &&  node ./dist/build/index.js",
-    "after-install": "cd node_modules/OpenRAP && npm run build"
+    "after-install": "cd node_modules/OpenRAP && npm run build",
+    "dev": "npm run build && gulp copy-dist-to-app"
   },
   "nyc": {
     "extension": [
@@ -47,6 +48,7 @@
     "nano": "^8.0.1",
     "tree-model": "^1.0.7",
     "typescript-ioc": "^1.2.5",
+    "unzip-stream": "^0.3.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {

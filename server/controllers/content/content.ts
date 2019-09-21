@@ -158,10 +158,11 @@ export default class Content {
 
     import(req: any, res: any): any {
         logger.debug(`ReqId = "${req.headers['X-msgid']}": Import method is called to import content`);
-        let downloadsPath = this.fileSDK.getAbsPath(this.ecarsFolderPath);
+        let downloadsPath = this.fileSDK.getAbsPath(this.contentsFilesPath);
         let busboy = new Busboy({ headers: req.headers });
         logger.info(`ReqId = "${req.headers['X-msgid']}": Path to import Content: ${downloadsPath}`)
         busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+            filename = filename.split('.')[0];
             // since file name's are having spaces we will generate uniq string as filename
             logger.info(`ReqId = "${req.headers['X-msgid']}": Generating UniqFileName for the requested file: ${filename}`)
             let hash = new Hashids(uuid.v4(), 25);
@@ -171,7 +172,8 @@ export default class Content {
             req.fileName = uniqFileName;
             req.filePath = filePath;
             logger.info(`ReqId = "${req.headers['X-msgid']}": Uploading of file  ${filePath} started`);
-            file.pipe(fs.createWriteStream(filePath));
+            // file.pipe(fs.createWriteStream(filePath));
+            this.contentManager.unZipContent(req, res, file);
         });
         busboy.on('finish', () => {
             logger.info(`ReqId = "${req.headers['X-msgid']}": Upload complete of the file ${req.filePath}`);
