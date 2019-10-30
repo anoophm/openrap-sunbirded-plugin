@@ -8,110 +8,90 @@ import * as glob from 'glob';
 import * as _ from 'lodash';
 import { STATUS } from "OpenRAP/dist/managers/DownloadManager/DownloadManager";
 import { IDesktopAppMetadata, IAddedUsingType } from './IContent';
+import { ContentDownloadManager } from "../../manager/contentDownloadManager"
 
 let dbSDK = new DatabaseSDK();
-
+let fileSDK;
 let dbName = "content_download";
+const workingCode = async (data) => {
+    try {
+        // update the status to completed
+        let { docs } = await dbSDK.find(dbName, {
+            selector: {
+                downloadId: data.id
+            }
+        });
+        let _id = docs[0]["_id"];
+        let parentId = docs[0]["contentId"];
+        let isCollection = (docs[0]["queueMetaData"]["mimeType"] === "application/vnd.ekstep.content-collection")
 
+        await dbSDK.update(dbName, _id, { status: CONTENT_DOWNLOAD_STATUS.Completed, updatedOn: Date.now() });
+        let failFlagCount = 0;
+        for (let file of data.files) {
+            try {
+                let fileName = path.basename(file.file, path.extname(file.file))
+
+                // Deleting content folder if exist. This is done as content folder is not getting updated after unzipping content with updates
+                await deleteContentFolder(file, fileSDK).catch(error => {
+                    logger.error(`Received Error while getting content data from db where error = ${error}`);
+                });                    
+                
+                await fileSDK.unzip(path.join('ecars', file.file), path.join('content', fileName), false)
+                let zipFilePath = glob.sync(path.join(fileSDK.getAbsPath('content'), fileName, '**', '*.zip'), {});
+                if (zipFilePath.length > 0) {
+                    // unzip the file if we have zip file
+                    let filePath = path.relative(fileSDK.getAbsPath(''), zipFilePath[0]);
+                    await fileSDK.unzip(filePath, path.join("content", fileName), false)
+                }
+
+                let manifest = await fileSDK.readJSON(path.join(fileSDK.getAbsPath('content'), fileName, 'manifest.json'));
+                let items = _.get(manifest, 'archive.items');
+
+                let metaData = items[0];
+                if (isCollection && file.id === parentId) {
+                    metaData = _.find(items, (i) => {
+                        return (i.mimeType === 'application/vnd.ekstep.content-collection' && i.visibility === 'Default')
+                    });
+                    let itemsClone = _.cloneDeep(items);
+                    let children = createHierarchy(itemsClone, metaData)
+                    metaData['children'] = children;
+                } else if (isCollection && file.id !== parentId) {
+                    metaData.visibility = "Parent"
+                }
+                metaData.baseDir = `content/${fileName}`;
+
+                const desktopAppMetadata: IDesktopAppMetadata = {
+                    "ecarFile": file.file,  // relative to ecar folder
+                    "addedUsing": IAddedUsingType.download,
+                    "createdOn": Date.now(),
+                    "updatedOn": Date.now()
+                }
+                metaData.desktopAppMetadata = desktopAppMetadata;
+                metaData.appIcon = metaData.appIcon ? `content/${fileName}/${metaData.appIcon}` : metaData.appIcon;
+                //insert metadata to content database
+                // TODO: before insertion check if the first object is type of collection then prepare the collection and insert 
+
+                await dbSDK.upsert('content', metaData.identifier, metaData)
+            } catch (error) {
+                failFlagCount++
+                logger.error(`Received error while content is extracted for id: ${data.id} and and err.message: ${error.message}`)
+            }
+        }
+        if (failFlagCount === data.files.length) {
+            await dbSDK.update(dbName, _id, { status: CONTENT_DOWNLOAD_STATUS.Failed, updatedOn: Date.now() })
+        } else {
+            await dbSDK.update(dbName, _id, { status: CONTENT_DOWNLOAD_STATUS.Indexed, updatedOn: Date.now() })
+        }
+    } catch (error) {
+        logger.error(`Received error while listening to content complete event for id: ${data.id} and err.message: ${error.message}`)
+    }
+}
 export const addContentListener = (pluginId) => {
     dbSDK.initialize(pluginId);
-    let fileSDK = containerAPI.getFileSDKInstance(pluginId);
+    fileSDK = containerAPI.getFileSDKInstance(pluginId);
     EventManager.subscribe(`${pluginId}:download:complete`, async (data) => {
-        try {
-            // update the status to completed
-            let { docs } = await dbSDK.find(dbName, {
-                selector: {
-                    downloadId: data.id
-                }
-            });
-            let _id = docs[0]["_id"];
-            let parentId = docs[0]["contentId"];
-            let isCollection = (docs[0]["queueMetaData"]["mimeType"] === "application/vnd.ekstep.content-collection")
 
-            await dbSDK.update(dbName, _id, { status: CONTENT_DOWNLOAD_STATUS.Completed, updatedOn: Date.now() });
-            let failFlagCount = 0;
-            for (let file of data.files) {
-                try {
-                    /*
-                                        {
-                          "id": "do_21256975952798515213721",
-                          "file": "creation-100100_1542778850847_do_21256975952798515213721_2.0.ecar",
-                          "source": "<url>",
-                          "path": "<basePath>/ecars",
-                          "size": 7813097,
-                          "downloaded": 7813097
-                        }
-                                    */
-                    // extract each file 
-                    let fileName = path.basename(file.file, path.extname(file.file))
-
-                    // Deleting content folder if exist. This is done as content folder is not getting updated after unzipping content with updates
-                    await deleteContentFolder(file, fileSDK).catch(error => {
-                        logger.error(`Received Error while getting content data from db where error = ${error}`);
-                    });                    
-                    
-                    await fileSDK.unzip(path.join('ecars', file.file), path.join('content', fileName), false)
-                    let zipFilePath = glob.sync(path.join(fileSDK.getAbsPath('content'), fileName, '**', '*.zip'), {});
-                    if (zipFilePath.length > 0) {
-                        // unzip the file if we have zip file
-                        let filePath = path.relative(fileSDK.getAbsPath(''), zipFilePath[0]);
-                        await fileSDK.unzip(filePath, path.join("content", fileName), false)
-                    }
-
-                    let manifest = await fileSDK.readJSON(path.join(fileSDK.getAbsPath('content'), fileName, 'manifest.json'));
-                    let items = _.get(manifest, 'archive.items');
-
-                    /* read manifest json and add the 
-                    desktopAppMetadata: {
-                        ecarFile:""  // relative to ecar folder
-                        addedUsing: "" // import or download
-                    }
-                    */
-                    let metaData = items[0];
-                    if (isCollection && file.id === parentId) {
-                        metaData = _.find(items, (i) => {
-                            return (i.mimeType === 'application/vnd.ekstep.content-collection' && i.visibility === 'Default')
-                        });
-                        let itemsClone = _.cloneDeep(items);
-                        let children = createHierarchy(itemsClone, metaData)
-                        metaData['children'] = children;
-                    } else if (isCollection && file.id !== parentId) {
-                        metaData.visibility = "Parent"
-                    }
-                    metaData.baseDir = `content/${fileName}`;
-
-                    const desktopAppMetadata: IDesktopAppMetadata = {
-                        "ecarFile": file.file,  // relative to ecar folder
-                        "addedUsing": IAddedUsingType.download,
-                        "createdOn": Date.now(),
-                        "updatedOn": Date.now()
-                    }
-                    metaData.desktopAppMetadata = desktopAppMetadata;
-                    metaData.appIcon = metaData.appIcon ? `content/${fileName}/${metaData.appIcon}` : metaData.appIcon;
-                    //insert metadata to content database
-                    // TODO: before insertion check if the first object is type of collection then prepare the collection and insert 
-
-                    await dbSDK.upsert('content', metaData.identifier, metaData)
-
-
-                    // upsert the content meta to content db
-
-                    // update content db to extracted
-                    // update the status to indexed
-                } catch (error) {
-                    failFlagCount++
-                    logger.error(`Received error while content is extracted for id: ${data.id} and and err.message: ${error.message}`)
-                }
-            }
-            if (failFlagCount === data.files.length) {
-                await dbSDK.update(dbName, _id, { status: CONTENT_DOWNLOAD_STATUS.Failed, updatedOn: Date.now() })
-            } else {
-                await dbSDK.update(dbName, _id, { status: CONTENT_DOWNLOAD_STATUS.Indexed, updatedOn: Date.now() })
-            }
-        } catch (error) {
-            logger.error(`Received error while listening to content complete event for id: ${data.id} and err.message: ${error.message}`)
-        }
-    })
+    });
 
     EventManager.subscribe(`${pluginId}:download:failed`, async (data) => {
         try {
