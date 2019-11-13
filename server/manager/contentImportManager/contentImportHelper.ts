@@ -67,7 +67,7 @@ const parseEcar = async () => {
     await fileSDK.mkdir(path.join('content', contentImportData._id));
     const ecarContentEntries = zipHandler.entries();
     const manifestEntry = ecarContentEntries['manifest.json'] || ecarContentEntries['/manifest.json'];
-    if (manifestEntry) {
+    if (!manifestEntry) {
       throw getErrorObj({ message: "manifest.json is missing in ecar" }, "MANIFEST_MISSING");
     }
     await extractFile(zipHandler, getDestFilePath(manifestEntry, contentImportData._id))
