@@ -17,7 +17,7 @@ import { Location } from './controllers/location';
 import DatabaseSDK from "./sdk/database";
 import config from "./config";
 import { logger } from "@project-sunbird/ext-framework-server/logger";
-import { containerAPI } from "OpenRAP/dist/api";
+import { containerAPI, logAsync } from "OpenRAP/dist/api";
 import  ContentDelete from "./controllers/content/contentDelete";
 import {
   addContentListener,
@@ -25,7 +25,7 @@ import {
 } from "./controllers/content/contentHelper";
 import * as _ from "lodash";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
-
+containerAPI.initLogger();
 export class Server extends BaseServer {
   private sunbirded_plugin_initialized = false;
   private ecarsFolderPath: string = "ecars";
@@ -63,8 +63,8 @@ export class Server extends BaseServer {
         EventManager.emit(`${manifest.id}:initialized`, {});
       });
   }
-  async initialize(manifest: Manifest) {
-    //registerAcrossAllSDKS()
+  @logAsync public async initialize(manifest: Manifest) {
+    // registerAcrossAllSDKS()
     this.databaseSdk.initialize(manifest.id);
     this.contentDelete = new ContentDelete(manifest);
     frameworkAPI.registerStaticRoute(
