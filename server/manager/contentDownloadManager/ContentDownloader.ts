@@ -3,6 +3,7 @@ import { Inject } from "typescript-ioc";
 import * as path from "path";
 import DatabaseSDK from "../../sdk/database";
 import { logger } from "@project-sunbird/logger";
+import { ClassLogger } from '@project-sunbird/logger/decorator';
 import { manifest } from "../../manifest";
 import * as  _ from "lodash";
 import { Observer } from "rxjs";
