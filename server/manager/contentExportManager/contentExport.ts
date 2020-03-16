@@ -5,7 +5,7 @@ import * as fse from "fs-extra";
 import { manifest } from "../../manifest";
 import * as uuid from "uuid";
 import { containerAPI } from "OpenRAP/dist/api";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 const fileSDK = containerAPI.getFileSDKInstance(manifest.id);
 
 export class ExportContent {

@@ -3,7 +3,7 @@ import * as  _ from "lodash";
 import { Singleton } from "typescript-ioc";
 import * as path from "path";
 import { handelError } from "./ITelemetryImport";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { containerAPI, ISystemQueueInstance, SystemQueueReq } from "OpenRAP/dist/api";
 import { manifest } from "../../manifest";
 import { ImportTelemetry } from "./telemetryImport";

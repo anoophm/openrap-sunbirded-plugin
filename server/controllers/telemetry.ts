@@ -1,4 +1,4 @@
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { Manifest } from "@project-sunbird/ext-framework-server/models";
 import * as _ from "lodash";
 import { containerAPI, ISystemQueueInstance } from "OpenRAP/dist/api";

@@ -1,4 +1,4 @@
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import Response from "./../utils/response";
 export default class Tenant {
   public get(req, res) {

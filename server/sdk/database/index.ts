@@ -2,7 +2,7 @@
  * @author Harish Kumar Gangula <harishg@ilimi.in>
  */
 import { frameworkAPI } from '@project-sunbird/ext-framework-server/api';
-import { logger } from '@project-sunbird/ext-framework-server/logger';
+import { logger } from '@project-sunbird/logger';
 import * as _ from 'lodash';
 /**
 * This SDK helps in performing operations with database and to create them

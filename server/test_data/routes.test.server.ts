@@ -1,5 +1,5 @@
 import { frameworkAPI } from "@project-sunbird/ext-framework-server/api";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { EventManager } from "@project-sunbird/ext-framework-server/managers/EventManager";
 import bodyParser = require("body-parser");
 import * as express from "express";

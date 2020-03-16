@@ -2,7 +2,7 @@ import * as childProcess from "child_process";
 import { ErrorObj, ITelemetrySkipped } from "./ITelemetryImport";
 import { Inject } from "typescript-ioc";
 import * as path from "path";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { containerAPI, ISystemQueue, ITaskExecuter } from "OpenRAP/dist/api";
 import { manifest } from "../../manifest";
 import * as  _ from "lodash";

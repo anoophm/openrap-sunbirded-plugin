@@ -1,4 +1,4 @@
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
 import { expect } from "chai";
 import * as _ from "lodash";

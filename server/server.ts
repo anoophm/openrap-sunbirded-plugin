@@ -14,7 +14,7 @@ import { Form } from "./controllers/form";
 import { Location } from './controllers/location';
 import DatabaseSDK from "./sdk/database";
 import config from "./config";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { containerAPI } from "OpenRAP/dist/api";
 import  ContentDelete from "./controllers/content/contentDelete";
 import * as _ from "lodash";

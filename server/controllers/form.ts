@@ -1,7 +1,7 @@
 import { Manifest } from "@project-sunbird/ext-framework-server/models";
 import DatabaseSDK from "../sdk/database/index";
 
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import Hashids from "hashids";
 import * as _ from "lodash";
 import { containerAPI } from "OpenRAP/dist/api";

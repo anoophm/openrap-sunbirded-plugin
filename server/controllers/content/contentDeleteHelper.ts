@@ -1,4 +1,4 @@
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import * as _ from "lodash";
 import { containerAPI, ISystemQueue, ITaskExecuter } from "OpenRAP/dist/api";
 import { Observer, of } from "rxjs";

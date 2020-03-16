@@ -4,7 +4,7 @@ import { AutoWired, Inject, Singleton } from "typescript-ioc";
 import * as path from "path";
 import { handelError, IContentImportData, ImportSteps } from "./IContentImport";
 import DatabaseSDK from "./../../sdk/database";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { containerAPI, ISystemQueueInstance, ISystemQueue, SystemQueueReq, SystemQueueStatus } from "OpenRAP/dist/api";
 import { manifest } from "../../manifest";
 import TelemetryHelper from "../../helper/telemetryHelper";

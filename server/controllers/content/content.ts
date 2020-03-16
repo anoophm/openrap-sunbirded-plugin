@@ -6,7 +6,7 @@ import Response from "../../utils/response";
 import { Manifest } from "@project-sunbird/ext-framework-server/models";
 import * as Busboy from "busboy";
 import * as fs from "fs";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import * as path from "path";
 import { ContentImportManager } from "../../manager/contentImportManager"
 import * as uuid from "uuid";

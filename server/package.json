@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "@project-sunbird/ext-framework-server": "0.1.26",
+    "@project-sunbird/logger": "0.0.2",
     "@project-sunbird/telemetry-sdk": "0.0.19",
     "@types/body-parser": "^1.17.0",
     "@types/busboy": "^0.2.3",
@@ -82,6 +83,9 @@
     "ts-node": "^8.1.0",
     "tslint": "^5.20.1",
     "typescript": "^2.7.1"
+  },
+  "peerDependencies": {
+    "@project-sunbird/logger": "0.0.2"
   },
   "keywords": [],
   "author": "",

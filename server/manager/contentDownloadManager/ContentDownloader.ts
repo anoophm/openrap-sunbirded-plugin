@@ -2,7 +2,7 @@ import * as childProcess from "child_process";
 import { Inject } from "typescript-ioc";
 import * as path from "path";
 import DatabaseSDK from "../../sdk/database";
-import { logger } from "@project-sunbird/ext-framework-server/logger";
+import { logger } from "@project-sunbird/logger";
 import { manifest } from "../../manifest";
 import * as  _ from "lodash";
 import { Observer } from "rxjs";
