@@ -73,7 +73,7 @@ export class TelemetryImportManager {
     logger.debug("---paths--", paths);
     paths = _.filter(paths, (filePath) => {
       if (this.findPath(registeredJobs.docs, filePath)) {
-        logger.log("skipping telemetry import for ", filePath, " as its already registered");
+        logger.info("skipping telemetry import for ", filePath, " as its already registered");
         return false;
       } else {
         return true;

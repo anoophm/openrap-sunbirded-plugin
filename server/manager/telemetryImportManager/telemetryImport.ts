@@ -96,7 +96,7 @@ export class ImportTelemetry implements ITaskExecuter {
 
   private async handleChildProcessMessage() {
     this.workerProcessRef.on("message", async (data) => {
-      logger.log("Message from child process for importId:" + _.get(data, "telemetryImportData._id"), data.message);
+      logger.info("Message from child process for importId:" + _.get(data, "telemetryImportData._id"), data.message);
       if (data.telemetryImportData && (data && data.message !== "LOG")) {
         this.saveDataFromWorker(data.telemetryImportData); // save only required data from child,
       }
@@ -124,7 +124,7 @@ export class ImportTelemetry implements ITaskExecuter {
 
   private handleWorkerCloseEvents() {
     this.workerProcessRef.on("exit", (code, signal) => {
-      logger.log(this.telemetryImportData._id, "Child process exited with", code, signal);
+      logger.info(this.telemetryImportData._id, "Child process exited with", code, signal);
       if (this.interrupt) {
         return;
       }

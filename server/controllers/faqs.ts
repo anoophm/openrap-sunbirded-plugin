@@ -23,7 +23,7 @@ export class Faqs {
   public async insert() {
     const files = await this.fileSDK.readdir(path.join("data", "faqs"));
     const dbData = await this.databaseSdk.list(FAQS_DB, {limit: 1});
-    logger.log("--Inserting faqs to db--", dbData.total_rows, files.length);
+    logger.info("--Inserting faqs to db--", dbData.total_rows, files.length);
     if (!dbData.total_rows && files.length) {
       const bulkDocs = [];
       for (const file of files) {

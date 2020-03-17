@@ -38,7 +38,7 @@ export class ExportContent {
           throw new Error("CONTENT_FILE_MISSING");
         }
       }
-      // this.interval = setInterval(() => logger.log(this.parentArchive.pointer(),
+      // this.interval = setInterval(() => logger.info(this.parentArchive.pointer(),
       // this.parentArchive._entriesCount, this.parentArchive._entriesProcessedCount), 1000);
       const data = await this.streamZip();
       logger.info("Ecar exported successfully with", data);
@@ -204,7 +204,7 @@ export class ExportContent {
         name: this.ecarName,
         ecarFilePath,
       }));
-      output.on("end", () => logger.log("Content has been zipped"));
+      output.on("end", () => logger.info("Content has been zipped"));
       this.parentArchive.on("error", reject);
       this.parentArchive.finalize();
       this.parentArchive.pipe(output);

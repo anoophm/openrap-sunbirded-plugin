@@ -97,7 +97,7 @@ export class ContentImportManager {
     }
     ecarPaths = _.filter(ecarPaths, (ecarPath) => {
       if (_.find(registeredJobs, { ecarSourcePath: ecarPath })) {
-        logger.log("skipping import for ", ecarPath, " as its already registered");
+        logger.info("skipping import for ", ecarPath, " as its already registered");
         return false;
       } else {
         return true;

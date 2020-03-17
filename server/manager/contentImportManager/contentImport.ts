@@ -79,7 +79,7 @@ export class ImportContent implements ITaskExecuter {
 
   public async cancel() {
     this.interrupt = true; // to stop message from child process
-    logger.log("canceling running import job for", this.contentImportData._id);
+    logger.info("canceling running import job for", this.contentImportData._id);
     if (this.contentImportData.metaData.step === ImportSteps.processContents) {
       return false;
     }
@@ -91,7 +91,7 @@ export class ImportContent implements ITaskExecuter {
   }
 
   public async pause() {
-    logger.log("pausing running import job for", this.contentImportData._id);
+    logger.info("pausing running import job for", this.contentImportData._id);
     this.interrupt = true; // to stop message from child process
     if (this.contentImportData.metaData.step === ImportSteps.processContents) {
       return false;
@@ -236,7 +236,7 @@ export class ImportContent implements ITaskExecuter {
 
   private async handleChildProcessMessage() {
     this.workerProcessRef.on("message", async (data) => {
-      logger.log("Message from child process for importId:" + _.get(data, "contentImportData._id"), data.message);
+      logger.info("Message from child process for importId:" + _.get(data, "contentImportData._id"), data.message);
       if (data.contentImportData && (data && data.message !== "LOG")) {
         this.saveDataFromWorker(data.contentImportData); // save only required data from child,
       }
@@ -265,7 +265,7 @@ export class ImportContent implements ITaskExecuter {
 
   private handleWorkerCloseEvents() {
     this.workerProcessRef.on("exit", (code, signal) => {
-      logger.log(this.contentImportData._id, "Child process exited with", code, signal);
+      logger.info(this.contentImportData._id, "Child process exited with", code, signal);
       if (this.interrupt || this.contentImportData.metaData.step === ImportSteps.complete) {
         return;
       }
@@ -314,7 +314,7 @@ export class ImportContent implements ITaskExecuter {
       this.workerProcessRef.on("message", async (data) => {
         if (data.message === "DATA_SYNC_KILL") {
           this.workerProcessRef.kill();
-          logger.log(this.contentImportData._id, "kill signal from child",
+          logger.info(this.contentImportData._id, "kill signal from child",
             this.contentImportData.status, this.contentImportData.metaData.step);
           resolve();
         }
