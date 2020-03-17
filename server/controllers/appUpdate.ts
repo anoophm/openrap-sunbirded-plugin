@@ -1,6 +1,6 @@
-import { logger } from "@project-sunbird/logger";
 import { Manifest } from "@project-sunbird/ext-framework-server/models";
 import { HTTPService } from "@project-sunbird/ext-framework-server/services";
+import { logger } from "@project-sunbird/logger";
 import * as _ from "lodash";
 import { containerAPI } from "OpenRAP/dist/api";
 import * as os from "os";
