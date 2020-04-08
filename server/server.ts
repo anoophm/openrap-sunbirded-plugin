@@ -58,7 +58,7 @@ export class Server extends BaseServer {
   }
   public handleSystemQueueTaskCompletionEvents() {
     EventManager.subscribe("SystemQueue:TASK_COMPLETE",
-      (data: ISystemQueue) => { // this should be moved to openrap-sunbirded-plugin
+      (data: ISystemQueue) => {
       if (!_.includes(REQUIRED_SYSTEM_QUEUE_TASK, data.type)) {
           return;
       }
