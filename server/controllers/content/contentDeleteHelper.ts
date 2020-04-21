@@ -1,6 +1,9 @@
 import { logger } from "@project-sunbird/logger";
+import * as fse from "fs-extra";
 import * as _ from "lodash";
 import { containerAPI, ISystemQueue, ITaskExecuter } from "OpenRAP/dist/api";
+import * as os from "os";
+import * as path from "path";
 import { Observer, of } from "rxjs";
 import { retry } from "rxjs/operators";
 import { manifest } from "../../manifest";
@@ -20,11 +23,13 @@ export class ContentDeleteHelper implements ITaskExecuter {
   private observer: Observer<ISystemQueue>;
   private systemQueue = containerAPI.getSystemQueueInstance(manifest.id);
   private fileSDK = containerAPI.getFileSDKInstance(manifest.id);
+  private settingSDK = containerAPI.getSettingSDKInstance(manifest.id);
+  private prefixPath = this.fileSDK.getAbsPath("");
 
   public async start(contentDeleteData: ISystemQueue, observer: import("rxjs").Observer<ISystemQueue>) {
     this.observer  = observer;
-    _.forEach(contentDeleteData.metaData.filePaths, (filePath) => {
-      this.pushToQueue(filePath);
+    _.forEach(contentDeleteData.metaData.filePaths, async (filePath) => {
+      await this.pushToQueue(filePath);
     });
     return true;
   }
@@ -33,8 +38,9 @@ export class ContentDeleteHelper implements ITaskExecuter {
     return this.contentDeleteData;
   }
 
-  public pushToQueue(filePath) {
-    if (this.checkPath(filePath)) {
+  public async pushToQueue(filePath) {
+    if (await this.checkPath(filePath)) {
+        this.fileSDK = containerAPI.getFileSDKInstance(manifest.id, this.prefixPath);
         this.queue.push(filePath);
         this.next();
     }
@@ -57,8 +63,33 @@ export class ContentDeleteHelper implements ITaskExecuter {
               });
     }
   }
-  private checkPath(filePath) {
+  private async checkPath(filePath: string) {
     const regex = /^content/i;
-    return filePath.match(regex) && !_.includes(this.queue, filePath);
+
+    if (os.platform() === "win32") {
+      if (filePath.match(regex)) {
+        try {
+          const locationList: any = await this.settingSDK.get(`content_storage_location`);
+          let i = 0;
+          while (_.get(locationList, "location.length") && i < locationList.location.length) {
+            const folderPath = path.join(locationList.location[i], filePath);
+            const isDirExist = await this.fileSDK.isDirectoryExists(folderPath).catch((err) => console.log("Error while checking directory path"));
+            if (isDirExist) {
+              this.prefixPath = locationList.location[i];
+              break;
+            }
+            i++;
+          }
+
+          return this.prefixPath && !_.includes(this.queue, filePath);
+        } catch (error) {
+          return this.prefixPath && !_.includes(this.queue, filePath);
+        }
+      } else {
+        return false;
+      }
+    } else {
+      return filePath.match(regex) && !_.includes(this.queue, filePath);
+    }
   }
 }
