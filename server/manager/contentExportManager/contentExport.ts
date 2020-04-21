@@ -1,5 +1,6 @@
 import * as  _ from "lodash";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as fse from "fs-extra";
 import { manifest } from "../../manifest";
@@ -21,6 +22,7 @@ export class ExportContent {
   private corruptContents = [];
   private startTime = Date.now();
   private cb;
+  private settingSDK = containerAPI.getSettingSDKInstance(manifest.id);
   constructor(private destFolder, private dbParentNode, private dbChildNodes) { }
   public async export(cb) {
     this.cb = cb;
@@ -29,6 +31,7 @@ export class ExportContent {
       this.ecarName = this.dbParentNode.name
       ? this.dbParentNode.name.replace(/[&\/\\#,+()$~%.!@%|"":*?<>{}]/g, "") : "Untitled content";
       logger.info("Export content mimeType", this.dbParentNode.mimeType);
+      await this.getContentBaseFolder(this.dbParentNode.identifier);
       if (this.dbParentNode.mimeType === "application/vnd.ekstep.content-collection") {
         this.parentManifest = await fileSDK.readJSON(path.join(this.contentBaseFolder, this.dbParentNode.identifier, "manifest.json"));
         this.dbParentNode = _.get(this.parentManifest, "archive.items[0]");
@@ -50,7 +53,7 @@ export class ExportContent {
       this.cb(null, data);
     } catch (error) {
       this.cb(error, null);
-      logger.error("Got Error while exporting content", this.ecarName, error, this.corruptContents);
+      logger.error("Error while exporting content", this.ecarName, error, this.corruptContents);
     }
   }
   private async loadParentCollection(): Promise<boolean> {
@@ -95,7 +98,9 @@ export class ExportContent {
         .catch((err) => logger.error(`Error while reading content: ${child} for content import for ${this.dbParentNode.identifier}`));
       if (childManifest) {
         const childDetails = _.get(childManifest, "archive.items[0]");
-        await this.loadContent(childDetails, true);
+        if (childDetails) {
+          await this.loadContent(childDetails, true);
+        }
       } else if (dbChildDetails) {
         await this.loadContent(dbChildDetails, true);
       } else {
@@ -245,5 +250,26 @@ export class ExportContent {
       },
     };
     return Buffer.from(JSON.stringify(manifestData));
+  }
+
+  private async getContentBaseFolder(contentId: string) {
+
+    if (os.platform() === "win32") {
+      try {
+        const locationList: any = await this.settingSDK.get(`content_storage_location`);
+        let i = 0;
+        while (_.get(locationList, "location.length") && i < locationList.location.length) {
+          const item = path.join(locationList.location[i], "content");
+          const folderPath = path.join(item, contentId);
+          if (await fileSDK.isDirectoryExists(folderPath)) {
+            this.contentBaseFolder = item;
+            break;
+          }
+          i++;
+        }
+      } catch (error) {
+        logger.error("Error while exporting content", error);
+      }
+    }
   }
 }
