@@ -42,6 +42,7 @@ export class Server extends BaseServer {
     // Added timeout since db creation is async and it is taking time and insertion is failing
     this.fileSDK = containerAPI.getFileSDKInstance(manifest.id);
     this.settingSDK = containerAPI.getSettingSDKInstance(manifest.id);
+    this.handleSystemQueueTaskCompletionEvents();
     this.initialize(manifest)
       .then(() => {
         this.sunbirded_plugin_initialized = true;
@@ -62,12 +63,24 @@ export class Server extends BaseServer {
       if (!_.includes(REQUIRED_SYSTEM_QUEUE_TASK, data.type)) {
           return;
       }
-      // TODO: divide time by contentSize and other factors based on the task Type
-      this.perfLogger.log({
-          type: data.type,
-          time: data.runTime,
-          metaData: data.metaData,
-        });
+      if (_.includes(["IMPORT", "DOWNLOAD"], data.type)) {
+        this.addPerfLogForImportAndDownload(data);
+      } else if (data.type === "DELETE") {
+        this.addPerfLogForDelete(data);
+      }
+    });
+  }
+  private addPerfLogForDelete(data: ISystemQueue) {
+    //TODO: need to be implemented
+  }
+  private addPerfLogForImportAndDownload(data: ISystemQueue) {
+    let runTime: number = data.runTime;
+    const contentSizeInMb: number = data.metaData.contentSize / 1e+6;
+    runTime = runTime / contentSizeInMb;
+    this.perfLogger.log({
+      type: data.type,
+      time: runTime,
+      metaData: {},
     });
   }
   async initialize(manifest: Manifest) {
